@@ -1,0 +1,225 @@
+swagger: '2.0'
+info:
+  title: BuyersMatch Marketing Post Generator API
+  description: Professional real estate marketing post generator with image processing
+  version: 2.0.0
+  contact:
+    name: Pankaj Kumar
+    email: pankaj4bharat@gmail.com
+
+host: api.buyersmatch.com
+basePath: /v1
+schemes:
+  - https
+
+securityDefinitions:
+  api_key:
+    type: apiKey
+    name: X-API-Key
+    in: header
+    description: API key for authentication
+
+security:
+  - api_key: []
+
+consumes:
+  - multipart/form-data
+
+produces:
+  - image/png
+  - image/jpeg
+  - application/json
+
+paths:
+  /generate:
+    post:
+      summary: Generate Marketing Post
+      description: |
+        Generate a professional real estate marketing post with property details and images.
+        
+        **Note:** File uploads (main_image, logo, interior images) are handled directly by the backend service 
+        and are not specified in this API Gateway specification due to platform limitations.
+        
+        **Required Parameters:**
+        - date: Property date (e.g., "15 DEC 2024")
+        - yield_rate: Property yield percentage (e.g., "7.94%")
+        - purchase_price: Purchase price (e.g., "$850,000")
+        - current_valuation: Current valuation (e.g., "$920,000")
+      
+      operationId: generateMarketingPost
+      security:
+        - api_key: []
+      
+      x-google-backend:
+        address: https://buyersmatch-post-generator-u5wvavudxa-uc.a.run.app
+      
+      parameters:
+        - name: date
+          in: formData
+          type: string
+          required: true
+          description: Property date (e.g., "15 DEC 2024")
+        
+        - name: yield_rate
+          in: formData
+          type: string
+          required: true
+          description: Property yield percentage
+        
+        - name: purchase_price
+          in: formData
+          type: string
+          required: true
+          description: Purchase price with currency symbol
+        
+        - name: current_valuation
+          in: formData
+          type: string
+          required: true
+          description: Current property valuation
+        
+        - name: property_title
+          in: formData
+          type: string
+          required: false
+          description: Property title or address
+        
+        - name: property_type
+          in: formData
+          type: string
+          required: false
+          description: Type of property
+        
+        - name: bedrooms
+          in: formData
+          type: string
+          required: false
+          description: Number of bedrooms
+        
+        - name: bathrooms
+          in: formData
+          type: string
+          required: false
+          description: Number of bathrooms
+        
+        - name: location
+          in: formData
+          type: string
+          required: false
+          description: Property location
+        
+        - name: apply_protection
+          in: formData
+          type: string
+          required: false
+          description: Apply anti-search protection
+          enum: ["true", "false"]
+        
+        - name: output_format
+          in: formData
+          type: string
+          required: false
+          description: Output image format
+          enum: ["PNG", "JPEG"]
+      
+      responses:
+        200:
+          description: Successfully generated marketing post
+          schema:
+            type: string
+            format: binary
+          headers:
+            Content-Type:
+              type: string
+              description: Image MIME type
+            Content-Disposition:
+              type: string
+              description: Attachment filename
+        
+        400:
+          description: Bad request - missing required parameters or invalid input
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message
+              message:
+                type: string
+                description: Detailed error description
+        
+        401:
+          description: Unauthorized - invalid or missing API key
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+        
+        413:
+          description: Payload too large - image files too big
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        
+        429:
+          description: Too many requests - rate limit exceeded
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        
+        500:
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message
+
+  /health:
+    get:
+      summary: Health Check
+      description: Check API health status
+      operationId: healthCheck
+      security:
+        - api_key: []
+      
+      x-google-backend:
+        address: https://buyersmatch-post-generator-u5wvavudxa-uc.a.run.app/health_check
+      
+      responses:
+        200:
+          description: API is healthy
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              service:
+                type: string
+              version:
+                type: string
+
+# Backend configuration for Cloud Functions
+x-google-backend:
+  address: https://buyersmatch-post-generator-u5wvavudxa-uc.a.run.app
+  path_translation: APPEND_PATH_TO_ADDRESS
+
+# Rate limiting and quotas
+x-google-quota:
+  metricCosts:
+    generate_requests: 1
+  
+x-google-management:
+  metrics:
+    - name: generate_requests
+      displayName: "Marketing Post Generation Requests"
+      valueType: INT64
+      metricKind: DELTA
