@@ -77,13 +77,13 @@ def add_noise(img, amount=0.005):
     return Image.fromarray(np_img)
 
 def protect_image_bytes(image_bytes):
-    """Apply minimal transformations with visible watermark."""
+    """Apply minimal transformations without center watermark."""
     img = Image.open(io.BytesIO(image_bytes))
     
     img = slightly_rotate_and_flip(img)
     img = compress_and_resize(img)
     img = add_noise(img, amount=0.005)
-    img = add_watermark(img, text="BuyersMatch", position='center')
+    # Removed center watermark - only keep the one on the circular image
     
     output_buffer = io.BytesIO()
     img.save(output_buffer, format="JPEG", quality=92)

@@ -106,11 +106,11 @@ class BuyersMatchTemplate:
         else:
             self._add_exact_brand_header(draw, property_data.get('date', 'DEC 2024'), None)
         
-        # Add main circular property image - large and clean
-        main_circle = self._create_clean_circular_image(main_image, 650)  # Large size
-        # Position exactly like examples
-        circle_x = self.template_size[0] - 630  # Right side positioning
-        circle_y = 100  # Top positioning
+        # Add main circular property image - larger and clean
+        main_circle = self._create_clean_circular_image(main_image, 620)  # Bigger size
+        # Position to ensure no overlap with left text
+        circle_x = 450  # Position from left to ensure text visibility
+        circle_y = 80  # Top positioning
         template.paste(main_circle, (circle_x, circle_y), main_circle)
         
         # Add property details section (left side) - clean styling
@@ -127,7 +127,7 @@ class BuyersMatchTemplate:
         self._add_clean_contact_info(draw)
         
         # Add subtle watermark on main image
-        self._add_clean_buyersmatch_watermark(template, circle_x, circle_y, 500)
+        self._add_clean_buyersmatch_watermark(template, circle_x, circle_y, 620)
         
         return template
     
@@ -227,51 +227,67 @@ class BuyersMatchTemplate:
         yield_value = data.get('yield', '5.59%')
         draw.text((30, current_y + 30), yield_value, font=value_font, fill=self.dark_brown)
         
-        # Purchase price section
+        # Purchase price section - ensure it's positioned properly and doesn't overlap with circle
         price_y = current_y + 100
         draw.text((30, price_y), "PURCHASE PRICE", font=label_font, fill=self.dark_brown)
         price_value = data.get('purchase_price', '$488,000')
-        draw.text((30, price_y + 30), price_value, font=value_font, fill=self.dark_brown)
+        
+        # Use a smaller font and ensure it's not clipped
+        purchase_font = self._get_font(28, bold=True)
+        # Ensure the text is positioned where it won't be clipped
+        draw.text((35, price_y + 30), price_value, font=purchase_font, fill=self.dark_brown)
     
     def _add_clean_valuation_banner(self, draw: ImageDraw.Draw, valuation: str):
         """Add flat brown valuation banner exactly like examples"""
-        banner_y = 680
+        banner_y = 620  # Moved up from 680
         banner_height = 80
         
         # Simple flat banner - no shadows or 3D effects
         banner_points = [
             (30, banner_y), 
-            (450, banner_y), 
-            (480, banner_y + 40),  # Arrow point
-            (450, banner_y + banner_height), 
+            (420, banner_y),  # Adjust width to fit text better
+            (450, banner_y + 40),  # Arrow point
+            (420, banner_y + banner_height), 
             (30, banner_y + banner_height)
         ]
         draw.polygon(banner_points, fill=self.brand_brown)
         
-        label_font = self._get_font(18)  # Label stays normal
-        value_font = self._get_font(48, bold=True)  # Value bold and larger
+        label_font = self._get_font(16, bold=False)  # Smaller label font
+        value_font = self._get_font(28, bold=True)  # Even smaller value font to ensure it fits
         
-        # White text on brown banner
-        draw.text((50, banner_y + 15), "CURRENT VALUATION", font=label_font, fill=self.white)
-        draw.text((50, banner_y + 40), valuation, font=value_font, fill=self.white)
+        # White text on brown banner - ensure proper positioning
+        draw.text((50, banner_y + 12), "CURRENT VALUATION", font=label_font, fill=self.white)
+        # Make sure the valuation text fits within the banner
+        draw.text((55, banner_y + 42), valuation, font=value_font, fill=self.white)
     
     def _add_clean_interior_images(self, template: Image.Image, interior_images: List[Image.Image]):
-        """Add interior images in clean rectangular frames"""
+        """Add interior images in clean rectangular frames - closer together with reasonable spacing"""
         if not interior_images:
             return
         
         # Position for interior images (bottom section)
-        start_x = 30
-        start_y = 800
-        image_size = (120, 90)  # Rectangular, not square
-        spacing = 140
+        start_y = 740  # Moved up from 800
+        image_size = (160, 120)  # Bigger size (was 120x90)
+        
+        # Use fixed spacing that looks good - similar to original but with equal margins
+        num_images = min(len(interior_images), 3)
+        space_between = 100  # Fixed reasonable spacing between images
+        
+        # Calculate total width needed
+        total_width = (num_images * image_size[0]) + ((num_images - 1) * space_between)
+        
+        # Center the group of images
+        start_x = (self.template_size[0] - total_width) // 2
         
         for i, interior_img in enumerate(interior_images[:3]):  # Max 3 images
             # Resize and position
             resized_img = interior_img.resize(image_size, Image.LANCZOS)
             
-            # Position calculation
-            x_pos = start_x + (i * spacing)
+            # Position calculation - start centered, then add image width + spacing for each subsequent image
+            if num_images == 1:
+                x_pos = (self.template_size[0] - image_size[0]) // 2  # Center single image
+            else:
+                x_pos = start_x + i * (image_size[0] + space_between)
             y_pos = start_y
             
             # Paste the image
@@ -279,8 +295,8 @@ class BuyersMatchTemplate:
     
     def _add_clean_contact_info(self, draw: ImageDraw.Draw):
         """Add contact information bar at bottom"""
-        # Simple brown bar at bottom
-        bar_y = 950
+        # Simple brown bar at bottom - adjusted for new layout
+        bar_y = 880  # Moved up from 950 to accommodate larger interior images
         bar_height = 80
         draw.rectangle([0, bar_y, self.template_size[0], bar_y + bar_height], fill=self.brand_brown)
         
